@@ -238,6 +238,22 @@ action:
         กรุณาเติมเงินที่ https://member-thaieasypass.exat.co.th
 ```
 
+### Transaction history table
+
+Renders the full month's transaction list as a table inside a Markdown card.  
+No extra custom cards required — works with stock Home Assistant.
+
+```yaml
+type: markdown
+title: ประวัติการใช้งานบัตร Easy Pass
+content: >
+  | # | วันที่ | ประเภท | จำนวน (฿) | ยอดคงเหลือ (฿) | ด่านทางด่วน |
+  |--:|--------|--------|----------:|---------------:|-------------|
+  {% for t in state_attr('sensor.easy_pass_PLATE_easy_pass_balance', 'transactions') | default([]) -%}
+  | {{ t.no }} | {{ t.date }} | {{ t.type }} | {{ t.amount }} | {{ t.balance_after }} | {{ t.location }} |
+  {% endfor %}
+```
+
 ### Monthly spend automation (notify on high spend)
 
 ```yaml

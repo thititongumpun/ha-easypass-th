@@ -168,15 +168,16 @@ class EasyPassBalanceSensor(EasyPassSensorBase):
             "owner_name": card.owner_name,
         }
         if card.usage_history:
-            attrs["recent_transactions"] = [
+            attrs["transactions"] = [
                 {
+                    "no": t.row_id,
                     "date": t.txn_date,
-                    "location": t.location,
                     "type": t.txn_desc,
                     "amount": t.txn_amt,
                     "balance_after": t.txn_balance,
+                    "location": t.location,
                 }
-                for t in card.usage_history[-10:]
+                for t in card.usage_history
             ]
         return attrs
 

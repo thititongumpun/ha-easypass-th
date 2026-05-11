@@ -140,3 +140,18 @@ tap_action:
 #       message: >
 #         ยอดเงินคงเหลือ {{ states('sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance') }} ฿
 #         กรุณาเติมเงินที่ https://member-thaieasypass.exat.co.th
+
+
+# =============================================================================
+# TRANSACTION HISTORY TABLE — ตารางประวัติการใช้งานบัตร
+# Displays the full month transaction list from the 'transactions' attribute.
+# Replace PLATE with your card's license plate slug.
+# =============================================================================
+# type: markdown
+# title: ประวัติการใช้งานบัตร Easy Pass
+# content: >
+#   | # | วันที่ | ประเภท | จำนวน (฿) | ยอดคงเหลือ (฿) | ด่านทางด่วน |
+#   |--:|--------|--------|----------:|---------------:|-------------|
+#   {% for t in state_attr('sensor.easy_pass_PLATE_easy_pass_balance', 'transactions') | default([]) -%}
+#   | {{ t.no }} | {{ t.date }} | {{ t.type }} | {{ t.amount }} | {{ t.balance_after }} | {{ t.location }} |
+#   {% endfor %}
