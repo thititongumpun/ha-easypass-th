@@ -37,6 +37,7 @@ class EasyPassCard:
     last_topup_amount: Optional[float] = None
     cust_acct_id: str = ""          # account ID used for usage history API
     usage_history: list = field(default_factory=list)  # list[EasyPassTransaction]
+    reward_points: Optional[int] = None                # easyPassCardsDataDropdown.Reward_Point
 
     raw_html_snippet: str = field(default="", repr=False)
 

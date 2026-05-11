@@ -382,14 +382,16 @@ class EasyPassScraper:
         card.mflow_message = (
             (d.get("easyPassPlusData") or {}).get("mflowRegisterMessage", "")
         )
-        # Try common field name variants for the account ID used by the usage API
-        card.cust_acct_id = (
-            d.get("CustAcctID")
-            or d.get("cust_acct_id")
-            or d.get("CustID")
-            or d.get("cust_id")
-            or ""
-        )
+        card.cust_acct_id = d.get("CustomerID", "")
+
+        # Reward points live in the parallel dropdown list at the same index
+        dropdown: list = data.get("easyPassCardsDataDropdown") or []
+        if dropdown:
+            raw_points = dropdown[0].get("Reward_Point")
+            try:
+                card.reward_points = int(raw_points) if raw_points is not None else None
+            except (ValueError, TypeError):
+                card.reward_points = None
 
         if not card.is_valid():
             _LOGGER.warning("Parsed card has no serial or license plate. Entry: %s", d)

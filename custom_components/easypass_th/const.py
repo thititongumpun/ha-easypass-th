@@ -41,6 +41,7 @@ SENSOR_OWNER = "owner"
 SENSOR_MFLOW = "mflow_status"
 SENSOR_MONTHLY_SPEND = "monthly_spend"
 SENSOR_LAST_TOLL_LOCATION = "last_toll_location"
+SENSOR_REWARD_POINTS = "reward_points"
 
 # --- Sensor display names ---
 SENSOR_NAMES = {
@@ -53,6 +54,7 @@ SENSOR_NAMES = {
     SENSOR_MFLOW:              "Easy Pass M-Flow Status",
     SENSOR_MONTHLY_SPEND:      "Easy Pass Monthly Spend",
     SENSOR_LAST_TOLL_LOCATION: "Easy Pass Last Toll Location",
+    SENSOR_REWARD_POINTS:      "Easy Pass Reward Points",
 }
 
 # --- Icons ---
@@ -66,6 +68,7 @@ SENSOR_ICONS = {
     SENSOR_MFLOW:              "mdi:highway",
     SENSOR_MONTHLY_SPEND:      "mdi:cash-multiple",
     SENSOR_LAST_TOLL_LOCATION: "mdi:map-marker",
+    SENSOR_REWARD_POINTS:      "mdi:star-circle",
 }
 
 # --- Error strings ---

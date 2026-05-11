@@ -31,6 +31,7 @@ from .const import (
     SENSOR_MONTHLY_SPEND,
     SENSOR_NAMES,
     SENSOR_OWNER,
+    SENSOR_REWARD_POINTS,
     SENSOR_SERIAL,
 )
 from .coordinator import EasyPassCoordinator
@@ -58,6 +59,7 @@ async def async_setup_entry(
             EasyPassLastTopupSensor(coordinator, entry),
             EasyPassMonthlySpendSensor(coordinator, entry),
             EasyPassLastTollLocationSensor(coordinator, entry),
+            EasyPassRewardPointsSensor(coordinator, entry),
         ]
     )
 
@@ -288,3 +290,17 @@ class EasyPassLastTollLocationSensor(EasyPassSensorBase):
             "amount": t.txn_amt,
             "balance_after": t.txn_balance,
         }
+
+
+class EasyPassRewardPointsSensor(EasyPassSensorBase):
+    """Reward points balance (คะแนน) — direct value from get-all API."""
+
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, SENSOR_REWARD_POINTS)
+        self._attr_native_unit_of_measurement = "คะแนน"
+        self._attr_state_class = SensorStateClass.TOTAL
+
+    @property
+    def native_value(self) -> Optional[int]:
+        card = self._card
+        return card.reward_points if card else None
