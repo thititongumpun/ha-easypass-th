@@ -37,8 +37,9 @@ from .const import (
     MAX_LOGIN_RETRIES,
     REQUEST_TIMEOUT_SECONDS,
     SESSION_USER_AGENT,
+    USAGE_API_URL,
 )
-from .models import EasyPassCard
+from .models import EasyPassCard, EasyPassTransaction
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -246,7 +247,13 @@ class EasyPassScraper:
             ) from exc
 
         _LOGGER.debug("Card API response keys: %s", list(data.keys()) if isinstance(data, dict) else type(data))
-        return self._parse_card(data)
+        card = self._parse_card(data)
+
+        # Fetch usage history if we have a cust_acct_id
+        if card.cust_acct_id and csrf_token:
+            card.usage_history = self._fetch_usage(card.cust_acct_id, csrf_token)
+
+        return card
 
     # ------------------------------------------------------------------
     # Parsing helpers  –– ADAPT THESE to match actual site HTML
@@ -276,6 +283,64 @@ class EasyPassScraper:
             'type="text" id="user_name"' in html
             or 'name="user_name" placeholder=' in html
         )
+
+    def _fetch_usage(self, cust_acct_id: str, csrf_token: str) -> list:
+        """
+        POST to /eservice/easypasscardlist/usage to get transaction history.
+
+        Fetches from the 1st of the current month through today.
+        Returns list[EasyPassTransaction] sorted oldest-first (as the API returns).
+        """
+        from datetime import date
+        today = date.today()
+        start_date = today.replace(day=1).strftime("%Y-%m-%d")
+        end_date = today.strftime("%Y-%m-%d")
+
+        payload = {
+            "cust_acct_id": cust_acct_id,
+            "start_date": start_date,
+            "end_date": end_date,
+            "language": "th",
+            "flag": "card_history_search",
+            "_token": csrf_token,
+            "choice": "",
+        }
+
+        try:
+            resp = self._session.post(
+                USAGE_API_URL,
+                data=payload,
+                headers={
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Referer": CARD_LIST_URL,
+                    "Accept": "application/json, text/javascript, */*; q=0.01",
+                },
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as exc:
+            _LOGGER.warning("Usage history fetch failed: %s", exc)
+            return []
+
+        tag_usage: list = (data.get("data") or {}).get("tag_usage") or []
+        transactions = []
+        for item in tag_usage:
+            try:
+                txn = EasyPassTransaction(
+                    row_id=int(item.get("row_id", 0)),
+                    location=item.get("location", ""),
+                    txn_date=item.get("txn_date", ""),
+                    txn_desc=item.get("txn_desc", ""),
+                    txn_amt=float(str(item.get("txn_amt", 0)).replace(",", "") or 0),
+                    txn_balance=float(str(item.get("txn_balance", 0)).replace(",", "") or 0),
+                )
+                transactions.append(txn)
+            except (ValueError, TypeError) as exc:
+                _LOGGER.debug("Skipping malformed transaction row: %s — %s", item, exc)
+
+        _LOGGER.debug("Fetched %d transactions for %s", len(transactions), cust_acct_id)
+        return transactions
 
     @staticmethod
     def _parse_balance(text: str) -> Optional[float]:
@@ -316,6 +381,14 @@ class EasyPassScraper:
         ).strip()
         card.mflow_message = (
             (d.get("easyPassPlusData") or {}).get("mflowRegisterMessage", "")
+        )
+        # Try common field name variants for the account ID used by the usage API
+        card.cust_acct_id = (
+            d.get("CustAcctID")
+            or d.get("cust_acct_id")
+            or d.get("CustID")
+            or d.get("cust_id")
+            or ""
         )
 
         if not card.is_valid():
