@@ -240,18 +240,37 @@ action:
 
 ### Transaction history table
 
-Renders the full month's transaction list as a table inside a Markdown card.  
+Renders the full month's transaction list as an HTML table inside a Markdown card.  
 No extra custom cards required — works with stock Home Assistant.
 
+> Replace `PLATE` with your entity slug from **Developer Tools → States** (filter by `easy_pass_balance` to find your exact entity ID).
+
 ```yaml
-type: markdown
-title: ประวัติการใช้งานบัตร Easy Pass
-content: >
-  | # | วันที่ | ประเภท | จำนวน (฿) | ยอดคงเหลือ (฿) | ด่านทางด่วน |
-  |--:|--------|--------|----------:|---------------:|-------------|
-  {% for t in state_attr('sensor.easy_pass_PLATE_easy_pass_balance', 'transactions') | default([]) -%}
-  | {{ t.no }} | {{ t.date }} | {{ t.type }} | {{ t.amount }} | {{ t.balance_after }} | {{ t.location }} |
-  {% endfor %}
+- type: markdown
+  content: |
+    ## Easy Pass
+
+    <table>
+      <tr>
+        <th>#</th>
+        <th>วันที่</th>
+        <th>ประเภท</th>
+        <th>จำนวน</th>
+        <th>คงเหลือ</th>
+        <th>ด่าน</th>
+      </tr>
+
+      {% for t in state_attr('sensor.easy_pass_PLATE_easy_pass_balance', 'transactions') | default([]) %}
+      <tr>
+        <td>{{ t.no }}</td>
+        <td>{{ t.date }}</td>
+        <td>{{ t.type }}</td>
+        <td>{{ t.amount }}</td>
+        <td>{{ t.balance_after }}</td>
+        <td>{{ t.location }}</td>
+      </tr>
+      {% endfor %}
+    </table>
 ```
 
 ### Monthly spend automation (notify on high spend)
