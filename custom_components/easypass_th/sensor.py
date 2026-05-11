@@ -18,7 +18,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
-    DATA_CARD,
     DOMAIN,
     MANUFACTURER,
     SENSOR_BALANCE,
@@ -42,20 +41,31 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Easy Pass sensors from a config entry."""
+    """Set up Easy Pass sensors from a config entry – one device per card.
+
+    A coordinator listener runs on every poll so newly added cards get
+    entities automatically without requiring a reload.
+    """
     coordinator: EasyPassCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    async_add_entities(
-        [
-            EasyPassBalanceSensor(coordinator, entry),
-            EasyPassLicenseSensor(coordinator, entry),
-            EasyPassSerialSensor(coordinator, entry),
-            EasyPassOwnerSensor(coordinator, entry),
-            EasyPassMflowSensor(coordinator, entry),
-            EasyPassLastUpdateSensor(coordinator, entry),
-            EasyPassLastTopupSensor(coordinator, entry),
-        ]
-    )
+    known_card_ids: set[str] = set()
+
+    def _add_new_cards() -> None:
+        new_entities: list[EasyPassSensorBase] = []
+        for idx, card in enumerate(coordinator.data or []):
+            card_id = card.serial_number or f"{entry.entry_id}_{idx}"
+            if card_id not in known_card_ids:
+                known_card_ids.add(card_id)
+                for cls in _SENSOR_CLASSES:
+                    new_entities.append(cls(coordinator, entry, card_id))
+        if new_entities:
+            async_add_entities(new_entities)
+
+    # Register listener first so it fires on every coordinator refresh.
+    entry.async_on_unload(coordinator.async_add_listener(_add_new_cards))
+
+    # Seed entities from data already loaded by async_config_entry_first_refresh.
+    _add_new_cards()
 
 
 # ---------------------------------------------------------------------------
@@ -67,7 +77,7 @@ class EasyPassSensorBase(CoordinatorEntity[EasyPassCoordinator], SensorEntity):
     """
     Common base for all Easy Pass sensors.
 
-    Each sensor reads from coordinator.data[DATA_CARD] (an EasyPassCard).
+    Each instance is tied to one card (identified by card_id = serial number).
     CoordinatorEntity handles:
       - Subscribing to coordinator updates
       - Setting available=False when the coordinator fails
@@ -80,35 +90,48 @@ class EasyPassSensorBase(CoordinatorEntity[EasyPassCoordinator], SensorEntity):
         self,
         coordinator: EasyPassCoordinator,
         entry: ConfigEntry,
+        card_id: str,
         sensor_key: str,
     ) -> None:
         super().__init__(coordinator)
         self._entry = entry
+        self._card_id = card_id
         self._sensor_key = sensor_key
-        self._attr_unique_id = f"{entry.entry_id}_{sensor_key}"
+        # unique_id includes card_id so each card's sensors are independent
+        self._attr_unique_id = f"{entry.entry_id}_{card_id}_{sensor_key}"
         self._attr_name = SENSOR_NAMES[sensor_key]
         self._attr_icon = SENSOR_ICONS[sensor_key]
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Group all sensors under one device card in HA device registry."""
-        card: Optional[EasyPassCard] = self._card
+        """One HA device per card, identified by serial number."""
+        card = self._card
+        plate = (card.license_plate if card else "") or self._card_id
         return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            name=f"Easy Pass – {self._entry.data.get(CONF_USERNAME, '')}",
+            identifiers={(DOMAIN, self._card_id)},
+            name=f"Easy Pass – {plate}",
             manufacturer=MANUFACTURER,
             model="Easy Pass Card",
             sw_version="1.0.0",
-            # Serial doubles as the device HW identifier once scraped
             serial_number=card.serial_number if card else None,
+            via_device=(DOMAIN, self._entry.entry_id),
         )
 
     @property
     def _card(self) -> Optional[EasyPassCard]:
-        """Shortcut to the EasyPassCard from coordinator data."""
-        if self.coordinator.data is None:
+        """Find this sensor's card in the current coordinator data."""
+        if not self.coordinator.data:
             return None
-        return self.coordinator.data.get(DATA_CARD)
+        for card in self.coordinator.data:
+            if (card.serial_number or "") == self._card_id:
+                return card
+        # Fall back by position encoded in card_id ({entry_id}_{idx})
+        suffix = self._card_id.replace(f"{self._entry.entry_id}_", "")
+        if suffix.isdigit():
+            idx = int(suffix)
+            if idx < len(self.coordinator.data):
+                return self.coordinator.data[idx]
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -119,8 +142,8 @@ class EasyPassSensorBase(CoordinatorEntity[EasyPassCoordinator], SensorEntity):
 class EasyPassBalanceSensor(EasyPassSensorBase):
     """Current balance in THB."""
 
-    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator, entry, SENSOR_BALANCE)
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
+        super().__init__(coordinator, entry, card_id, SENSOR_BALANCE)
         self._attr_native_unit_of_measurement = "THB"
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.TOTAL
@@ -146,8 +169,8 @@ class EasyPassBalanceSensor(EasyPassSensorBase):
 class EasyPassLicenseSensor(EasyPassSensorBase):
     """Thai vehicle license plate associated with the card."""
 
-    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator, entry, SENSOR_LICENSE)
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
+        super().__init__(coordinator, entry, card_id, SENSOR_LICENSE)
 
     @property
     def native_value(self) -> Optional[str]:
@@ -158,8 +181,8 @@ class EasyPassLicenseSensor(EasyPassSensorBase):
 class EasyPassSerialSensor(EasyPassSensorBase):
     """Card serial / tag number."""
 
-    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator, entry, SENSOR_SERIAL)
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
+        super().__init__(coordinator, entry, card_id, SENSOR_SERIAL)
 
     @property
     def native_value(self) -> Optional[str]:
@@ -170,8 +193,8 @@ class EasyPassSerialSensor(EasyPassSensorBase):
 class EasyPassLastUpdateSensor(EasyPassSensorBase):
     """Date of the most recent toll transaction."""
 
-    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator, entry, SENSOR_LAST_UPDATE)
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
+        super().__init__(coordinator, entry, card_id, SENSOR_LAST_UPDATE)
 
     @property
     def native_value(self) -> Optional[str]:
@@ -182,8 +205,8 @@ class EasyPassLastUpdateSensor(EasyPassSensorBase):
 class EasyPassLastTopupSensor(EasyPassSensorBase):
     """Amount of the most recent top-up."""
 
-    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator, entry, SENSOR_LAST_TOPUP)
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
+        super().__init__(coordinator, entry, card_id, SENSOR_LAST_TOPUP)
         self._attr_native_unit_of_measurement = "THB"
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.TOTAL
@@ -198,8 +221,8 @@ class EasyPassLastTopupSensor(EasyPassSensorBase):
 class EasyPassOwnerSensor(EasyPassSensorBase):
     """Account holder name."""
 
-    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator, entry, SENSOR_OWNER)
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
+        super().__init__(coordinator, entry, card_id, SENSOR_OWNER)
 
     @property
     def native_value(self) -> Optional[str]:
@@ -210,10 +233,22 @@ class EasyPassOwnerSensor(EasyPassSensorBase):
 class EasyPassMflowSensor(EasyPassSensorBase):
     """M-Flow registration status message."""
 
-    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator, entry, SENSOR_MFLOW)
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
+        super().__init__(coordinator, entry, card_id, SENSOR_MFLOW)
 
     @property
     def native_value(self) -> Optional[str]:
         card = self._card
         return card.mflow_message if card else None
+
+
+# Ordered list used by async_setup_entry to create all sensors per card
+_SENSOR_CLASSES = [
+    EasyPassBalanceSensor,
+    EasyPassLicenseSensor,
+    EasyPassSerialSensor,
+    EasyPassOwnerSensor,
+    EasyPassMflowSensor,
+    EasyPassLastUpdateSensor,
+    EasyPassLastTopupSensor,
+]

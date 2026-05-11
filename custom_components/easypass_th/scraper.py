@@ -68,16 +68,16 @@ class EasyPassScraper:
     # Public API (called from executor thread by coordinator)
     # ------------------------------------------------------------------
 
-    def fetch_card(self) -> EasyPassCard:
+    def fetch_cards(self) -> list[EasyPassCard]:
         """
-        Return current card data.  Automatically logs in on first call
+        Return all cards for the account.  Automatically logs in on first call
         or re-logs in after session expiry (up to MAX_LOGIN_RETRIES).
         """
         for attempt in range(MAX_LOGIN_RETRIES):
             try:
                 if self._session is None:
                     self._do_login()
-                return self._scrape_card()
+                return self._scrape_cards()
             except EasyPassSessionExpiredError:
                 _LOGGER.info(
                     "Session expired (attempt %d/%d), re-logging in.",
@@ -88,7 +88,7 @@ class EasyPassScraper:
             except EasyPassAuthError:
                 raise  # Bad credentials – no point retrying
             except Exception as exc:
-                _LOGGER.warning("fetch_card attempt %d failed: %s", attempt + 1, exc)
+                _LOGGER.warning("fetch_cards attempt %d failed: %s", attempt + 1, exc)
                 self._session = None
                 if attempt == MAX_LOGIN_RETRIES - 1:
                     raise EasyPassConnectionError(str(exc)) from exc
@@ -194,9 +194,9 @@ class EasyPassScraper:
         self._login_attempts = 0
         _LOGGER.debug("Login successful.")
 
-    def _scrape_card(self) -> EasyPassCard:
+    def _scrape_cards(self) -> list[EasyPassCard]:
         """
-        Fetch card data via the JSON API.
+        Fetch all cards via the JSON API.
 
         Step 1: GET the card list page to pick up a fresh CSRF token from
                 the <meta name="csrf-token"> tag (Laravel refreshes it per session).
@@ -246,7 +246,7 @@ class EasyPassScraper:
             ) from exc
 
         _LOGGER.debug("Card API response keys: %s", list(data.keys()) if isinstance(data, dict) else type(data))
-        return self._parse_card(data)
+        return self._parse_cards(data)
 
     # ------------------------------------------------------------------
     # Parsing helpers  –– ADAPT THESE to match actual site HTML
@@ -284,11 +284,11 @@ class EasyPassScraper:
         match = re.search(r"[\d.]+", text)
         return float(match.group()) if match else None
 
-    def _parse_card(self, data: dict) -> EasyPassCard:
+    def _parse_cards(self, data: dict) -> list[EasyPassCard]:
         """
         Parse the JSON response from /eservice/easypasscardlist/get-all.
 
-        Uses easyPassCardsData.data[0] (full paginated record).
+        All records in easyPassCardsData.data are returned (one per card).
 
         Fields mapped:
             SmartcardID                        → serial_number
@@ -297,29 +297,31 @@ class EasyPassScraper:
             AC_Balance                         → balance
             easyPassPlusData.mflowRegisterMessage → mflow_message
         """
-        card = EasyPassCard()
-
-        cards: list = (data.get("easyPassCardsData") or {}).get("data") or []
-        if not cards:
+        raw_cards: list = (data.get("easyPassCardsData") or {}).get("data") or []
+        if not raw_cards:
             _LOGGER.warning("Card API returned no cards. Keys: %s", list(data.keys()))
-            return card
+            return []
 
-        d = cards[0]
+        results: list[EasyPassCard] = []
+        for d in raw_cards:
+            card = EasyPassCard()
+            card.serial_number = d.get("SmartcardID", "")
+            card.license_plate = (
+                d.get("PlateNo", "") + " " + d.get("PlateProvince", "")
+            ).strip()
+            card.balance = EasyPassScraper._parse_balance(str(d.get("AC_Balance", "") or ""))
+            card.owner_name = (
+                f"{d.get('Title', '')}{d.get('Given_Name', '')} {d.get('Family_Name', '')}"
+            ).strip()
+            card.mflow_message = (
+                (d.get("easyPassPlusData") or {}).get("mflowRegisterMessage", "")
+            )
 
-        card.serial_number = d.get("SmartcardID", "")
-        card.license_plate = (
-            d.get("PlateNo", "") + " " + d.get("PlateProvince", "")
-        ).strip()
-        card.balance = EasyPassScraper._parse_balance(str(d.get("AC_Balance", "") or ""))
-        card.owner_name = (
-            f"{d.get('Title', '')}{d.get('Given_Name', '')} {d.get('Family_Name', '')}"
-        ).strip()
-        card.mflow_message = (
-            (d.get("easyPassPlusData") or {}).get("mflowRegisterMessage", "")
-        )
+            if not card.is_valid():
+                _LOGGER.warning("Parsed card has no serial or license plate. Entry: %s", d)
+            else:
+                results.append(card)
+                _LOGGER.debug("Parsed card: %s", card)
 
-        if not card.is_valid():
-            _LOGGER.warning("Parsed card has no serial or license plate. Entry: %s", d)
-
-        _LOGGER.debug("Parsed card: %s", card)
-        return card
+        _LOGGER.debug("Total cards parsed: %d", len(results))
+        return results

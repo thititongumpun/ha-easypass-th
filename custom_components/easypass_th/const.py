@@ -27,9 +27,6 @@ SESSION_USER_AGENT = (
     "Chrome/124.0.0.0 Safari/537.36"
 )
 
-# --- Data keys (coordinator store) ---
-DATA_CARD = "card"
-
 # --- Sensor unique ID suffixes ---
 SENSOR_BALANCE = "balance"
 SENSOR_LICENSE = "license"

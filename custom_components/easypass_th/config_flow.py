@@ -39,8 +39,8 @@ async def _validate_credentials(hass, username: str, password: str) -> None:
     """
     scraper = EasyPassScraper(username, password)
     try:
-        # fetch_card performs a full login + scrape round-trip
-        await hass.async_add_executor_job(scraper.fetch_card)
+        # fetch_cards performs a full login + scrape round-trip
+        await hass.async_add_executor_job(scraper.fetch_cards)
     finally:
         await hass.async_add_executor_job(scraper.close)
 

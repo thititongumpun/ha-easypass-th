@@ -5,9 +5,9 @@ POLLING ARCHITECTURE
 --------------------
 HA calls coordinator.async_request_refresh() every SCAN_INTERVAL minutes.
 The coordinator runs _async_update_data() which:
-  1. Calls loop.run_in_executor(None, scraper.fetch_card)
+  1. Calls loop.run_in_executor(None, scraper.fetch_cards)
      → offloads blocking I/O to a thread pool, never blocking the event loop.
-  2. Returns an EasyPassCard dataclass.
+  2. Returns list[EasyPassCard] – one entry per card on the account.
   3. All sensor entities subscribe to coordinator updates via CoordinatorEntity;
      they automatically re-render whenever new data arrives.
 
@@ -32,7 +32,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import (
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DOMAIN,
-    DATA_CARD,
 )
 from .models import EasyPassCard
 from .scraper import (
@@ -44,7 +43,7 @@ from .scraper import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class EasyPassCoordinator(DataUpdateCoordinator[dict]):
+class EasyPassCoordinator(DataUpdateCoordinator[list[EasyPassCard]]):
     """Manages polling and data distribution for one Easy Pass account."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -61,14 +60,14 @@ class EasyPassCoordinator(DataUpdateCoordinator[dict]):
             update_interval=timedelta(minutes=DEFAULT_SCAN_INTERVAL_MINUTES),
         )
 
-    async def _async_update_data(self) -> dict:
+    async def _async_update_data(self) -> list[EasyPassCard]:
         """
         Fetch new data.  Called by the coordinator framework automatically.
-        Must return a dict – sensor entities read from coordinator.data.
+        Returns list[EasyPassCard] – one entry per registered card.
         """
         try:
-            card: EasyPassCard = await self.hass.async_add_executor_job(
-                self._scraper.fetch_card
+            cards: list[EasyPassCard] = await self.hass.async_add_executor_job(
+                self._scraper.fetch_cards
             )
         except EasyPassAuthError as exc:
             # Stops polling; HA shows a "re-authenticate" notification
@@ -77,7 +76,7 @@ class EasyPassCoordinator(DataUpdateCoordinator[dict]):
             # Temporary failure – coordinator will retry at next interval
             raise UpdateFailed(f"Connection error: {exc}") from exc
 
-        return {DATA_CARD: card}
+        return cards
 
     async def async_shutdown(self) -> None:
         """Clean up the underlying requests session."""
