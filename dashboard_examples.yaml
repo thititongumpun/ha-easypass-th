@@ -1,0 +1,142 @@
+# =============================================================================
+# Easy Pass — Mushroom Dashboard
+# Entity IDs use your email slug. Replace:
+#   thiti180536_gmail_com  →  your_email_slug
+#
+# Find exact entity IDs:
+#   Developer Tools → States → filter "easy_pass"
+# =============================================================================
+
+# =============================================================================
+# FULL DASHBOARD VIEW  (paste into a new dashboard page)
+# =============================================================================
+
+type: sections
+title: Easy Pass
+sections:
+  - type: grid
+    cards:
+      - type: heading
+        heading: ยอดเงิน Easy Pass
+        heading_style: title
+
+      - type: custom:mushroom-template-card
+        primary: >
+          {{ states('sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance') | float(0) | round(2) }} ฿
+        secondary: >
+          อัปเดต {{ relative_time(states.sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance.last_updated) }} ที่แล้ว
+        icon: mdi:cash
+        icon_color: >
+          {% set bal = states('sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance') | float(0) %}
+          {% if bal < 100 %}red
+          {% elif bal < 300 %}orange
+          {% else %}green{% endif %}
+        badge_icon: >
+          {% if states('sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance') | float(0) < 100 %}
+            mdi:alert
+          {% endif %}
+        badge_color: red
+        fill_container: true
+        tap_action:
+          action: more-info
+
+      - type: gauge
+        entity: sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance
+        name: ยอดเงินคงเหลือ
+        unit: ฿
+        min: 0
+        max: 1000
+        needle: true
+        severity:
+          green: 300
+          yellow: 100
+          red: 0
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: ข้อมูลบัตร
+        heading_style: title
+
+      - type: custom:mushroom-entity-card
+        entity: sensor.easy_pass_thiti180536_gmail_com_easy_pass_license_plate
+        name: ทะเบียนรถ
+        icon: mdi:car
+        icon_color: blue
+        fill_container: true
+
+      - type: custom:mushroom-entity-card
+        entity: sensor.easy_pass_thiti180536_gmail_com_easy_pass_card_serial
+        name: หมายเลขการ์ด (S/N)
+        icon: mdi:card-account-details
+        icon_color: purple
+        fill_container: true
+
+      - type: custom:mushroom-entity-card
+        entity: sensor.easy_pass_thiti180536_gmail_com_easy_pass_account_owner
+        name: เจ้าของบัตร
+        icon: mdi:account
+        icon_color: indigo
+        fill_container: true
+
+      - type: custom:mushroom-entity-card
+        entity: sensor.easy_pass_thiti180536_gmail_com_easy_pass_m_flow_status
+        name: สถานะ M-Flow
+        icon: mdi:highway
+        icon_color: teal
+        fill_container: true
+
+
+# =============================================================================
+# CHIPS BAR  (compact — put at top of any view)
+# =============================================================================
+
+type: custom:mushroom-chips-card
+chips:
+  - type: entity
+    entity: sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance
+    icon: mdi:cash
+    content_info: state
+  - type: entity
+    entity: sensor.easy_pass_thiti180536_gmail_com_easy_pass_license_plate
+    icon: mdi:car
+    content_info: state
+
+
+# =============================================================================
+# SINGLE SUMMARY CARD  (drop anywhere)
+# =============================================================================
+
+type: custom:mushroom-template-card
+primary: "{{ state_attr('sensor.easy_pass_thiti180536_gmail_com_easy_pass_account_owner', 'friendly_name') }}"
+secondary: >
+  💳 {{ states('sensor.easy_pass_thiti180536_gmail_com_easy_pass_card_serial') }}
+  │ 🚗 {{ states('sensor.easy_pass_thiti180536_gmail_com_easy_pass_license_plate') }}
+  │ 💰 {{ states('sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance') }} ฿
+icon: mdi:highway
+icon_color: >
+  {% if states('sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance') | float(0) < 100 %}
+    red
+  {% else %}
+    blue
+  {% endif %}
+tap_action:
+  action: navigate
+  navigation_path: /easypass
+
+
+# =============================================================================
+# AUTOMATION — แจ้งเตือนเมื่อยอดเงินต่ำกว่า 100 ฿
+# =============================================================================
+# alias: Easy Pass ยอดเงินต่ำ
+# trigger:
+#   - platform: numeric_state
+#     entity_id: sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance
+#     below: 100
+# action:
+#   - service: notify.mobile_app_your_phone
+#     data:
+#       title: "⚠️ Easy Pass ยอดเงินต่ำ"
+#       message: >
+#         ยอดเงินคงเหลือ {{ states('sensor.easy_pass_thiti180536_gmail_com_easy_pass_balance') }} ฿
+#         กรุณาเติมเงินที่ https://member-thaieasypass.exat.co.th

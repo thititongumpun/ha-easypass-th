@@ -1,0 +1,12 @@
+{
+  "entity": {
+    "sensor": {
+      "balance":     { "default": "mdi:cash" },
+      "license":     { "default": "mdi:car" },
+      "serial":      { "default": "mdi:card-account-details" },
+      "last_update": { "default": "mdi:calendar-clock" },
+      "last_topup":  { "default": "mdi:cash-plus" },
+      "owner":       { "default": "mdi:account" }
+    }
+  }
+}

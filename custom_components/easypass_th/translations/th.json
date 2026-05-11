@@ -1,0 +1,56 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Thailand Easy Pass",
+        "description": "กรอกข้อมูลบัญชี Easy Pass จากเว็บ thaieasypass.exat.co.th",
+        "data": {
+          "username": "ชื่อผู้ใช้ / เลขบัตรประชาชน",
+          "password": "รหัสผ่าน"
+        },
+        "data_description": {
+          "username": "ชื่อผู้ใช้สำหรับเข้าสู่ระบบ Easy Pass (มักเป็นเลขบัตรประชาชน)",
+          "password": "รหัสผ่านบัญชี Easy Pass"
+        }
+      },
+      "reauth": {
+        "title": "ยืนยันตัวตน Easy Pass อีกครั้ง",
+        "description": "Session หมดอายุ กรุณากรอกรหัสผ่านสำหรับ **{username}** ใหม่อีกครั้ง",
+        "data": {
+          "password": "รหัสผ่าน"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "ไม่สามารถเชื่อมต่อ thaieasypass.exat.co.th ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต",
+      "invalid_auth": "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
+      "unknown": "เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาตรวจสอบ log ของ Home Assistant"
+    },
+    "abort": {
+      "already_configured": "บัญชี Easy Pass นี้ถูกตั้งค่าไว้แล้ว",
+      "reauth_successful": "ยืนยันตัวตนสำเร็จ"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "balance": {
+        "name": "ยอดเงินคงเหลือ"
+      },
+      "license": {
+        "name": "ทะเบียนรถ"
+      },
+      "serial": {
+        "name": "หมายเลขการ์ด"
+      },
+      "last_update": {
+        "name": "ธุรกรรมล่าสุด"
+      },
+      "last_topup": {
+        "name": "เติมเงินล่าสุด"
+      },
+      "owner": {
+        "name": "เจ้าของบัญชี"
+      }
+    }
+  }
+}

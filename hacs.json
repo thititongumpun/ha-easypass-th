@@ -1,0 +1,9 @@
+{
+  "name": "Thailand Easy Pass",
+  "domains": ["sensor"],
+  "documentation": "https://github.com/thititongumpun/ha-easypass-th",
+  "issue_tracker": "https://github.com/thititongumpun/ha-easypass-th/issues",
+  "homeassistant": "2024.1.0",
+  "iot_class": "cloud_polling",
+  "render_readme": true
+}
