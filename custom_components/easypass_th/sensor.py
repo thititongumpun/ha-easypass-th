@@ -22,12 +22,15 @@ from .const import (
     MANUFACTURER,
     SENSOR_BALANCE,
     SENSOR_ICONS,
+    SENSOR_LAST_TOLL_LOCATION,
     SENSOR_LAST_TOPUP,
     SENSOR_LAST_UPDATE,
     SENSOR_LICENSE,
     SENSOR_MFLOW,
+    SENSOR_MONTHLY_SPEND,
     SENSOR_NAMES,
     SENSOR_OWNER,
+    SENSOR_REWARD_POINTS,
     SENSOR_SERIAL,
 )
 from .coordinator import EasyPassCoordinator
@@ -159,11 +162,23 @@ class EasyPassBalanceSensor(EasyPassSensorBase):
         card = self._card
         if not card:
             return {}
-        return {
+        attrs: dict[str, Any] = {
             "serial_number": card.serial_number,
             "license_plate": card.license_plate,
             "owner_name": card.owner_name,
         }
+        if card.usage_history:
+            attrs["recent_transactions"] = [
+                {
+                    "date": t.txn_date,
+                    "location": t.location,
+                    "type": t.txn_desc,
+                    "amount": t.txn_amt,
+                    "balance_after": t.txn_balance,
+                }
+                for t in card.usage_history[-10:]
+            ]
+        return attrs
 
 
 class EasyPassLicenseSensor(EasyPassSensorBase):
@@ -199,6 +214,8 @@ class EasyPassLastUpdateSensor(EasyPassSensorBase):
     @property
     def native_value(self) -> Optional[str]:
         card = self._card
+        if card and card.last_toll:
+            return card.last_toll.txn_date
         return card.last_transaction_date if card else None
 
 
@@ -215,6 +232,8 @@ class EasyPassLastTopupSensor(EasyPassSensorBase):
     @property
     def native_value(self) -> Optional[float]:
         card = self._card
+        if card and card.last_topup:
+            return card.last_topup.txn_amt
         return card.last_topup_amount if card else None
 
 
@@ -242,6 +261,71 @@ class EasyPassMflowSensor(EasyPassSensorBase):
         return card.mflow_message if card else None
 
 
+class EasyPassMonthlySpendSensor(EasyPassSensorBase):
+    """Total toll charges for the current month from usage history."""
+
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
+        super().__init__(coordinator, entry, card_id, SENSOR_MONTHLY_SPEND)
+        self._attr_native_unit_of_measurement = "THB"
+        self._attr_device_class = SensorDeviceClass.MONETARY
+        self._attr_state_class = SensorStateClass.TOTAL
+        self._attr_suggested_display_precision = 2
+
+    @property
+    def native_value(self) -> Optional[float]:
+        card = self._card
+        if card is None:
+            return None
+        return card.monthly_toll_spend if card.usage_history else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        card = self._card
+        if not card:
+            return {}
+        return {"transaction_count": sum(1 for t in card.usage_history if t.is_toll)}
+
+
+class EasyPassLastTollLocationSensor(EasyPassSensorBase):
+    """Location of the most recent toll passage."""
+
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
+        super().__init__(coordinator, entry, card_id, SENSOR_LAST_TOLL_LOCATION)
+
+    @property
+    def native_value(self) -> Optional[str]:
+        card = self._card
+        if card and card.last_toll:
+            return card.last_toll.location
+        return None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        card = self._card
+        if not card or not card.last_toll:
+            return {}
+        t = card.last_toll
+        return {
+            "txn_date": t.txn_date,
+            "amount": t.txn_amt,
+            "balance_after": t.txn_balance,
+        }
+
+
+class EasyPassRewardPointsSensor(EasyPassSensorBase):
+    """Reward points balance (คะแนน) — direct value from get-all API."""
+
+    def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
+        super().__init__(coordinator, entry, card_id, SENSOR_REWARD_POINTS)
+        self._attr_native_unit_of_measurement = "คะแนน"
+        self._attr_state_class = SensorStateClass.TOTAL
+
+    @property
+    def native_value(self) -> Optional[int]:
+        card = self._card
+        return card.reward_points if card else None
+
+
 # Ordered list used by async_setup_entry to create all sensors per card
 _SENSOR_CLASSES = [
     EasyPassBalanceSensor,
@@ -251,4 +335,7 @@ _SENSOR_CLASSES = [
     EasyPassMflowSensor,
     EasyPassLastUpdateSensor,
     EasyPassLastTopupSensor,
+    EasyPassMonthlySpendSensor,
+    EasyPassLastTollLocationSensor,
+    EasyPassRewardPointsSensor,
 ]

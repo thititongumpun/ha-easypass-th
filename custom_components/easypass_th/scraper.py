@@ -37,8 +37,9 @@ from .const import (
     MAX_LOGIN_RETRIES,
     REQUEST_TIMEOUT_SECONDS,
     SESSION_USER_AGENT,
+    USAGE_API_URL,
 )
-from .models import EasyPassCard
+from .models import EasyPassCard, EasyPassTransaction
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -246,7 +247,14 @@ class EasyPassScraper:
             ) from exc
 
         _LOGGER.debug("Card API response keys: %s", list(data.keys()) if isinstance(data, dict) else type(data))
-        return self._parse_cards(data)
+        cards = self._parse_cards(data)
+
+        # Fetch usage history for each card that has a cust_acct_id
+        for card in cards:
+            if card.cust_acct_id and csrf_token:
+                card.usage_history = self._fetch_usage(card.cust_acct_id, csrf_token)
+
+        return cards
 
     # ------------------------------------------------------------------
     # Parsing helpers  –– ADAPT THESE to match actual site HTML
@@ -276,6 +284,64 @@ class EasyPassScraper:
             'type="text" id="user_name"' in html
             or 'name="user_name" placeholder=' in html
         )
+
+    def _fetch_usage(self, cust_acct_id: str, csrf_token: str) -> list:
+        """
+        POST to /eservice/easypasscardlist/usage to get transaction history.
+
+        Fetches from the 1st of the current month through today.
+        Returns list[EasyPassTransaction] sorted oldest-first (as the API returns).
+        """
+        from datetime import date
+        today = date.today()
+        start_date = today.replace(day=1).strftime("%Y-%m-%d")
+        end_date = today.strftime("%Y-%m-%d")
+
+        payload = {
+            "cust_acct_id": cust_acct_id,
+            "start_date": start_date,
+            "end_date": end_date,
+            "language": "th",
+            "flag": "card_history_search",
+            "_token": csrf_token,
+            "choice": "",
+        }
+
+        try:
+            resp = self._session.post(
+                USAGE_API_URL,
+                data=payload,
+                headers={
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Referer": CARD_LIST_URL,
+                    "Accept": "application/json, text/javascript, */*; q=0.01",
+                },
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as exc:
+            _LOGGER.warning("Usage history fetch failed: %s", exc)
+            return []
+
+        tag_usage: list = (data.get("data") or {}).get("tag_usage") or []
+        transactions = []
+        for item in tag_usage:
+            try:
+                txn = EasyPassTransaction(
+                    row_id=int(item.get("row_id", 0)),
+                    location=item.get("location", ""),
+                    txn_date=item.get("txn_date", ""),
+                    txn_desc=item.get("txn_desc", ""),
+                    txn_amt=float(str(item.get("txn_amt", 0)).replace(",", "") or 0),
+                    txn_balance=float(str(item.get("txn_balance", 0)).replace(",", "") or 0),
+                )
+                transactions.append(txn)
+            except (ValueError, TypeError) as exc:
+                _LOGGER.debug("Skipping malformed transaction row: %s — %s", item, exc)
+
+        _LOGGER.debug("Fetched %d transactions for %s", len(transactions), cust_acct_id)
+        return transactions
 
     @staticmethod
     def _parse_balance(text: str) -> Optional[float]:
@@ -316,12 +382,23 @@ class EasyPassScraper:
             card.mflow_message = (
                 (d.get("easyPassPlusData") or {}).get("mflowRegisterMessage", "")
             )
+            card.cust_acct_id = d.get("CustomerID", "")
 
             if not card.is_valid():
                 _LOGGER.warning("Parsed card has no serial or license plate. Entry: %s", d)
             else:
                 results.append(card)
                 _LOGGER.debug("Parsed card: %s", card)
+
+        # Reward points from the parallel dropdown list (index matches card position)
+        dropdown: list = data.get("easyPassCardsDataDropdown") or []
+        for i, card in enumerate(results):
+            if i < len(dropdown):
+                raw_points = dropdown[i].get("Reward_Point")
+                try:
+                    card.reward_points = int(raw_points) if raw_points is not None else None
+                except (ValueError, TypeError):
+                    card.reward_points = None
 
         _LOGGER.debug("Total cards parsed: %d", len(results))
         return results
