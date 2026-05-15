@@ -227,7 +227,7 @@ class EasyPassScraper:
         try:
             api_resp = self._session.get(
                 CARD_API_URL,
-                params={"_token": csrf_token, "page": 1},
+                params={"_token": csrf_token, "page": 1, "length": 20},
                 headers={
                     "X-Requested-With": "XMLHttpRequest",
                     "Referer": CARD_LIST_URL,
