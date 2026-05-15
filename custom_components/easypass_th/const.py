@@ -19,6 +19,7 @@ CONF_PASSWORD = "password"
 # --- Coordinator ---
 DEFAULT_SCAN_INTERVAL_MINUTES = 30
 MAX_LOGIN_RETRIES = 3
+MAX_CARDS = 30
 
 # --- Request settings ---
 REQUEST_TIMEOUT_SECONDS = 30
