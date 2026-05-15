@@ -224,8 +224,8 @@ class EasyPassScraper:
         csrf_token = self._extract_csrf_meta(page_resp.text)
         _LOGGER.debug("Card page CSRF token: %s…", csrf_token[:10] if csrf_token else "NONE")
 
-        # Step 2: call the JSON API. The site defaults to 10 rows per page and
-        # may ignore length=20, so fetch pages until we have enough unique cards.
+        # Step 2: call the JSON API. The site defaults to 10 rows per page, so
+        # fetch pages until we have enough unique cards.
         cards: list[EasyPassCard] = []
         seen_card_ids: set[str] = set()
 
