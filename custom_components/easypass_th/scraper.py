@@ -34,15 +34,19 @@ from .const import (
     CARD_LIST_URL,
     LOGIN_POST_URL,
     LOGIN_URL,
-    MAX_CARDS,
     MAX_LOGIN_RETRIES,
     REQUEST_TIMEOUT_SECONDS,
     SESSION_USER_AGENT,
     USAGE_API_URL,
 )
+
 from .models import EasyPassCard, EasyPassTransaction
 
 _LOGGER = logging.getLogger(__name__)
+
+# Safety ceiling: stop paginating after this many pages to avoid infinite loops
+# on a buggy API response. A real account will never come close to this.
+_MAX_PAGES = 100
 
 
 class EasyPassAuthError(Exception):
@@ -224,12 +228,12 @@ class EasyPassScraper:
         csrf_token = self._extract_csrf_meta(page_resp.text)
         _LOGGER.debug("Card page CSRF token: %s…", csrf_token[:10] if csrf_token else "NONE")
 
-        # Step 2: call the JSON API. The site defaults to 10 rows per page, so
-        # fetch pages until we have enough unique cards.
+        # Step 2: call the JSON API. Pages until the API returns an empty page
+        # or all cards on a page are duplicates (natural termination).
         cards: list[EasyPassCard] = []
         seen_card_ids: set[str] = set()
 
-        for page in range(1, MAX_CARDS + 1):
+        for page in range(1, _MAX_PAGES + 1):
             try:
                 data = self._fetch_card_page(csrf_token, page)
             except EasyPassConnectionError:
@@ -247,16 +251,10 @@ class EasyPassScraper:
                 card_id = card.serial_number or card.license_plate or card.cust_acct_id
                 if card_id in seen_card_ids:
                     continue
-
                 seen_card_ids.add(card_id)
                 cards.append(card)
                 new_cards += 1
 
-                if len(cards) >= MAX_CARDS:
-                    break
-
-            if len(cards) >= MAX_CARDS:
-                break
             if new_cards == 0:
                 _LOGGER.debug("Stopping card pagination at page %d; no new cards found.", page)
                 break
