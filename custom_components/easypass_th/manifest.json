@@ -1,7 +1,7 @@
 {
   "domain": "easypass_th",
   "name": "Thailand Easy Pass",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "documentation": "https://github.com/thititongumpun/ha-easypass-th",
   "issue_tracker": "https://github.com/thititongumpun/ha-easypass-th/issues",
   "codeowners": ["@thititongumpun"],
