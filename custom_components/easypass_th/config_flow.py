@@ -11,10 +11,13 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import (
+    CONF_HISTORY_DAYS,
+    DEFAULT_HISTORY_DAYS,
     DOMAIN,
     ERROR_CANNOT_CONNECT,
     ERROR_INVALID_AUTH,
     ERROR_UNKNOWN,
+    HISTORY_DAYS_OPTIONS,
 )
 from .scraper import (
     EasyPassAuthError,
@@ -45,10 +48,37 @@ async def _validate_credentials(hass, username: str, password: str) -> None:
         await hass.async_add_executor_job(scraper.close)
 
 
+class EasyPassOptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle Easy Pass options (configurable after setup)."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current = self.config_entry.options.get(CONF_HISTORY_DAYS, DEFAULT_HISTORY_DAYS)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_HISTORY_DAYS, default=current): vol.In(
+                        HISTORY_DAYS_OPTIONS
+                    ),
+                }
+            ),
+        )
+
+
 class EasyPassConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the UI setup flow for Easy Pass."""
 
     VERSION = 1
+
+    @staticmethod
+    @config_entries.callback
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> EasyPassOptionsFlowHandler:
+        return EasyPassOptionsFlowHandler()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None

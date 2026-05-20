@@ -11,6 +11,17 @@ Supports **multiple cards** on a single account — each card appears as its own
 
 ---
 
+## What's new in 1.0.2
+
+| # | Feature | Details |
+|---|---------|---------|
+| 1 | **Configurable transaction history range** | Choose 7 / 30 / 90 days instead of being locked to the current calendar month |
+| 2 | **Manual refresh service** | Call `easypass_th.refresh` from an automation or Developer Tools to poll immediately |
+
+> **Upgrading from 1.0.x?** See the [Upgrade guide](#upgrade-guide-10x--102) below — no migration needed.
+
+---
+
 ## Features
 
 - 💰 Real-time card balance (THB)
@@ -19,7 +30,7 @@ Supports **multiple cards** on a single account — each card appears as its own
 - 🪪 Card serial number (SmartCard S/N)
 - 👤 Account owner name
 - 🛣️ M-Flow registration status
-- 📊 Monthly toll spend (sum of current-month toll charges)
+- 📊 Toll spend over configurable history window (default 30 days)
 - 📍 Last toll location (most recent tollgate passed)
 - 🕐 Last transaction date and last top-up amount (from real history)
 - **Multiple cards** — one HA device per card, all updated together

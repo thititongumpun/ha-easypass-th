@@ -20,6 +20,14 @@ CONF_PASSWORD = "password"
 DEFAULT_SCAN_INTERVAL_MINUTES = 30
 MAX_LOGIN_RETRIES = 3
 
+# --- Options ---
+CONF_HISTORY_DAYS = "history_days"
+DEFAULT_HISTORY_DAYS = 30
+HISTORY_DAYS_OPTIONS = [7, 30, 90]
+
+# --- Services ---
+SERVICE_REFRESH = "refresh"
+
 # --- Request settings ---
 REQUEST_TIMEOUT_SECONDS = 30
 SESSION_USER_AGENT = (

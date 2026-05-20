@@ -49,27 +49,5 @@
       "name": "Refresh",
       "description": "Force an immediate poll of all Easy Pass cards, instead of waiting for the next scheduled update."
     }
-  },
-  "entity": {
-    "sensor": {
-      "balance": {
-        "name": "Balance"
-      },
-      "license": {
-        "name": "License Plate"
-      },
-      "serial": {
-        "name": "Card Serial"
-      },
-      "last_update": {
-        "name": "Last Transaction"
-      },
-      "last_topup": {
-        "name": "Last Top-up"
-      },
-      "owner": {
-        "name": "Account Owner"
-      }
-    }
   }
 }
