@@ -15,10 +15,10 @@ from __future__ import annotations
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
 
-from .const import DOMAIN
+from .const import DOMAIN, SERVICE_REFRESH
 from .coordinator import EasyPassCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,6 +46,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register a reload listener so option changes take effect immediately
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
+    # Register the refresh service once for the whole domain
+    if not hass.services.has_service(DOMAIN, SERVICE_REFRESH):
+        async def handle_refresh(call: ServiceCall) -> None:
+            for coordinator in hass.data[DOMAIN].values():
+                await coordinator.async_request_refresh()
+
+        hass.services.async_register(DOMAIN, SERVICE_REFRESH, handle_refresh)
+
     return True
 
 
@@ -57,6 +65,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator: EasyPassCoordinator = hass.data[DOMAIN].pop(entry.entry_id, None)
         if coordinator:
             await coordinator.async_shutdown()
+
+        # Remove service when the last entry is gone
+        if not hass.data[DOMAIN]:
+            hass.services.async_remove(DOMAIN, SERVICE_REFRESH)
 
     return unloaded
 

@@ -30,6 +30,8 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    CONF_HISTORY_DAYS,
+    DEFAULT_HISTORY_DAYS,
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DOMAIN,
 )
@@ -65,9 +67,10 @@ class EasyPassCoordinator(DataUpdateCoordinator[list[EasyPassCard]]):
         Fetch new data.  Called by the coordinator framework automatically.
         Returns list[EasyPassCard] – one entry per registered card.
         """
+        history_days: int = self._entry.options.get(CONF_HISTORY_DAYS, DEFAULT_HISTORY_DAYS)
         try:
             cards: list[EasyPassCard] = await self.hass.async_add_executor_job(
-                self._scraper.fetch_cards
+                self._scraper.fetch_cards, history_days
             )
         except EasyPassAuthError as exc:
             # Stops polling; HA shows a "re-authenticate" notification

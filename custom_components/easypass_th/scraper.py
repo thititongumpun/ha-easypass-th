@@ -74,7 +74,7 @@ class EasyPassScraper:
     # Public API (called from executor thread by coordinator)
     # ------------------------------------------------------------------
 
-    def fetch_cards(self) -> list[EasyPassCard]:
+    def fetch_cards(self, history_days: int = 30) -> list[EasyPassCard]:
         """
         Return all cards for the account.  Automatically logs in on first call
         or re-logs in after session expiry (up to MAX_LOGIN_RETRIES).
@@ -83,7 +83,7 @@ class EasyPassScraper:
             try:
                 if self._session is None:
                     self._do_login()
-                return self._scrape_cards()
+                return self._scrape_cards(history_days)
             except EasyPassSessionExpiredError:
                 _LOGGER.info(
                     "Session expired (attempt %d/%d), re-logging in.",
@@ -200,7 +200,7 @@ class EasyPassScraper:
         self._login_attempts = 0
         _LOGGER.debug("Login successful.")
 
-    def _scrape_cards(self) -> list[EasyPassCard]:
+    def _scrape_cards(self, history_days: int = 30) -> list[EasyPassCard]:
         """
         Fetch all cards via the JSON API.
 
@@ -264,7 +264,7 @@ class EasyPassScraper:
         # Fetch usage history for each card that has a cust_acct_id
         for card in cards:
             if card.cust_acct_id and csrf_token:
-                card.usage_history = self._fetch_usage(card.cust_acct_id, csrf_token)
+                card.usage_history = self._fetch_usage(card.cust_acct_id, csrf_token, history_days)
 
         return cards
 
@@ -326,16 +326,16 @@ class EasyPassScraper:
             or 'name="user_name" placeholder=' in html
         )
 
-    def _fetch_usage(self, cust_acct_id: str, csrf_token: str) -> list:
+    def _fetch_usage(self, cust_acct_id: str, csrf_token: str, history_days: int = 30) -> list:
         """
         POST to /eservice/easypasscardlist/usage to get transaction history.
 
-        Fetches from the 1st of the current month through today.
+        Fetches from `history_days` ago through today.
         Returns list[EasyPassTransaction] sorted oldest-first (as the API returns).
         """
-        from datetime import date
+        from datetime import date, timedelta
         today = date.today()
-        start_date = today.replace(day=1).strftime("%Y-%m-%d")
+        start_date = (today - timedelta(days=history_days)).strftime("%Y-%m-%d")
         end_date = today.strftime("%Y-%m-%d")
 
         payload = {

@@ -31,6 +31,25 @@
       "reauth_successful": "ยืนยันตัวตนสำเร็จ"
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ตั้งค่า Easy Pass",
+        "data": {
+          "history_days": "ช่วงเวลาประวัติธุรกรรม"
+        },
+        "data_description": {
+          "history_days": "จำนวนวันของประวัติธุรกรรมที่ดึงข้อมูลในแต่ละครั้ง (7, 30 หรือ 90 วัน)"
+        }
+      }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "รีเฟรช",
+      "description": "บังคับดึงข้อมูลการ์ด Easy Pass ทั้งหมดทันที โดยไม่ต้องรอรอบถัดไป"
+    }
+  },
   "entity": {
     "sensor": {
       "balance": {
