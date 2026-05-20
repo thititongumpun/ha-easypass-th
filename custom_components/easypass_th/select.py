@@ -13,8 +13,8 @@ from .const import (
     DEFAULT_HISTORY_DAYS,
     DOMAIN,
     HISTORY_DAYS_OPTIONS,
-    MANUFACTURER,
 )
+from .coordinator import EasyPassCoordinator
 
 
 async def async_setup_entry(
@@ -22,7 +22,13 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    async_add_entities([EasyPassHistorySelect(hass, entry)])
+    coordinator: EasyPassCoordinator = hass.data[DOMAIN][entry.entry_id]
+    entities = [
+        EasyPassHistorySelect(hass, entry, card.serial_number or f"{entry.entry_id}_{i}")
+        for i, card in enumerate(coordinator.data or [])
+    ]
+    if entities:
+        async_add_entities(entities)
 
 
 class EasyPassHistorySelect(SelectEntity):
@@ -30,17 +36,16 @@ class EasyPassHistorySelect(SelectEntity):
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:history"
-    _attr_name = "Easy Pass History Range"
+    _attr_name = "History Range"
     _attr_options = [str(d) for d in HISTORY_DAYS_OPTIONS]
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, card_id: str) -> None:
         self._hass = hass
         self._entry = entry
-        self._attr_unique_id = f"{entry.entry_id}_history_days"
+        self._attr_unique_id = f"{entry.entry_id}_{card_id}_history_days"
+        # Use the same device identifier as the sensors for this card
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name="Easy Pass Account",
-            manufacturer=MANUFACTURER,
+            identifiers={(DOMAIN, card_id)},
         )
 
     @property
