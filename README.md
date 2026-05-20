@@ -12,6 +12,16 @@ Supports **multiple cards** on a single account — each card appears as its own
 
 ---
 
+## What's new in 1.0.4
+
+| # | Fix | Details |
+|---|-----|---------|
+| 1 | **History Range on correct device** | Select entity now appears on the per-card (license plate) device alongside all other sensors, not on a separate *Easy Pass Account* device |
+
+> **Upgrading from 1.0.3?** Copy and restart. If a leftover *Easy Pass Account* device remains, delete it from **Settings → Devices**.
+
+---
+
 ## What's new in 1.0.3
 
 | # | Feature | Details |
