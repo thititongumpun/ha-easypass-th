@@ -7,7 +7,8 @@
 Monitor your **Thailand Easy Pass** (การทางพิเศษแห่งประเทศไทย) toll card balance, transaction history, and reward points directly in Home Assistant.  
 Supports **multiple cards** on a single account — each card appears as its own device.
 
-![screenshot](screenshot.png)
+![balance](screenshots/balance.png)
+![range](screenshots/history_range.png)
 
 ---
 

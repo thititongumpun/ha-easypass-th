@@ -143,6 +143,20 @@ tap_action:
 
 
 # =============================================================================
+# HISTORY RANGE SELECTOR  (requires select entity from integration v1.0.3+)
+# Shows a dropdown to switch between 7 / 30 / 90-day transaction history.
+# Changing the value triggers a coordinator reload and re-fetches data.
+# =============================================================================
+
+type: custom:mushroom-select-card
+entity: select.easy_pass_thiti180536_gmail_com_easy_pass_history_range
+name: ช่วงเวลาประวัติ
+icon: mdi:history
+icon_color: blue
+fill_container: true
+
+
+# =============================================================================
 # TRANSACTION HISTORY TABLE — ตารางประวัติการใช้งานบัตร
 # Displays the full month transaction list from the 'transactions' attribute.
 # Replace PLATE with your entity slug from Developer Tools → States
