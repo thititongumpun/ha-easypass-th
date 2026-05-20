@@ -12,6 +12,16 @@ Supports **multiple cards** on a single account — each card appears as its own
 
 ---
 
+## What's new in 1.0.3
+
+| # | Feature | Details |
+|---|---------|---------|
+| 1 | **History Range select entity** | Switch between 7 / 30 / 90-day transaction history directly from your dashboard — no need to go into Settings → Configure |
+
+> **Upgrading from 1.0.2?** Copy the updated integration folder and restart HA. A new **Easy Pass History Range** select entity will appear automatically on the Easy Pass Account device.
+
+---
+
 ## What's new in 1.0.2
 
 | # | Feature | Details |
@@ -19,7 +29,7 @@ Supports **multiple cards** on a single account — each card appears as its own
 | 1 | **Configurable transaction history range** | Choose 7 / 30 / 90 days instead of being locked to the current calendar month |
 | 2 | **Manual refresh service** | Call `easypass_th.refresh` from an automation or Developer Tools to poll immediately |
 
-> **Upgrading from 1.0.x?** See the [Upgrade guide](#upgrade-guide-10x--102) below — no migration needed.
+> **Upgrading from 1.0.x?** No migration needed — just copy and restart.
 
 ---
 
@@ -84,6 +94,14 @@ Every card registered to your account becomes a separate HA device:
 |-------------|------|
 | `Easy Pass – กข 1234 กรุงเทพมหานคร` | Created on first load |
 | `Easy Pass – กก 1234 เชียงใหม่` | Added automatically on next poll after registering a new card |
+
+### 1 select entity per account
+
+| Entity | Description | Options |
+|--------|-------------|---------|
+| `select.easy_pass_[slug]_easy_pass_history_range` | Transaction history window | `7`, `30`, `90` (days) |
+
+Changing the selection triggers an immediate coordinator reload and re-fetches data with the new window.
 
 ### 10 sensors per card
 
@@ -151,6 +169,17 @@ sensor.easy_pass_กข_1234_กรุงเทพมหานคร_easy_pass_m
 ## Dashboard Examples
 
 > Replace the entity IDs below with your actual ones from Developer Tools → States.
+
+### History range selector
+
+```yaml
+type: custom:mushroom-select-card
+entity: select.easy_pass_SLUG_easy_pass_history_range
+name: ช่วงเวลาประวัติ
+icon: mdi:history
+icon_color: blue
+fill_container: true
+```
 
 ### Balance card with low-balance alert colour
 
