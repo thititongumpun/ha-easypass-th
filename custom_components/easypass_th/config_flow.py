@@ -16,12 +16,14 @@ from .const import (
     DOMAIN,
     ERROR_CANNOT_CONNECT,
     ERROR_INVALID_AUTH,
+    ERROR_SOCIAL_LOGIN,
     ERROR_UNKNOWN,
     HISTORY_DAYS_OPTIONS,
 )
 from .scraper import (
     EasyPassAuthError,
     EasyPassConnectionError,
+    EasyPassSocialLoginError,
     EasyPassScraper,
 )
 
@@ -96,6 +98,8 @@ class EasyPassConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             try:
                 await _validate_credentials(self.hass, username, password)
+            except EasyPassSocialLoginError:
+                errors["base"] = ERROR_SOCIAL_LOGIN
             except EasyPassAuthError:
                 errors["base"] = ERROR_INVALID_AUTH
             except EasyPassConnectionError:
@@ -135,6 +139,8 @@ class EasyPassConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             try:
                 await _validate_credentials(self.hass, username, password)
+            except EasyPassSocialLoginError:
+                errors["base"] = ERROR_SOCIAL_LOGIN
             except EasyPassAuthError:
                 errors["base"] = ERROR_INVALID_AUTH
             except EasyPassConnectionError:

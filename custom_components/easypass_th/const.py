@@ -79,5 +79,6 @@ SENSOR_ICONS = {
 # --- Error strings ---
 ERROR_CANNOT_CONNECT = "cannot_connect"
 ERROR_INVALID_AUTH = "invalid_auth"
+ERROR_SOCIAL_LOGIN = "social_login"
 ERROR_UNKNOWN = "unknown"
 ERROR_SESSION_EXPIRED = "session_expired"

@@ -53,6 +53,10 @@ class EasyPassAuthError(Exception):
     """Raised when credentials are rejected."""
 
 
+class EasyPassSocialLoginError(Exception):
+    """Raised when the account uses Social/Google login which is not supported."""
+
+
 class EasyPassSessionExpiredError(Exception):
     """Raised when the session has expired and needs re-login."""
 
@@ -176,9 +180,13 @@ class EasyPassScraper:
             result = resp.json()
             _LOGGER.debug("Login response JSON: %s", result)
         except Exception:
-            # Unexpected non-JSON response — treat as failure
+            content_type = resp.headers.get("Content-Type", "")
+            if "text/html" in content_type:
+                raise EasyPassSocialLoginError(
+                    "Server returned HTML instead of JSON — account likely uses Social/Google login."
+                )
             raise EasyPassConnectionError(
-                f"Login returned unexpected content-type: {resp.headers.get('Content-Type')}"
+                f"Login returned unexpected content-type: {content_type}"
             )
 
         # The JS at line 944 redirects to /eservice/easypasscardlist on success.

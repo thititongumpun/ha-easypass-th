@@ -24,6 +24,7 @@
     "error": {
       "cannot_connect": "ไม่สามารถเชื่อมต่อ thaieasypass.exat.co.th ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต",
       "invalid_auth": "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
+      "social_login": "บัญชีนี้ใช้การเข้าสู่ระบบแบบ Social/Google ซึ่งไม่รองรับ กรุณาเข้าสู่ระบบที่ thaieasypass.exat.co.th แล้วตั้งรหัสผ่านแบบ username/password แทน",
       "unknown": "เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาตรวจสอบ log ของ Home Assistant"
     },
     "abort": {
