@@ -8,6 +8,8 @@ Monitor your **Thailand Easy Pass** (การทางพิเศษแห่�
 Supports **multiple cards** on a single account — each card appears as its own device.
 
 ![balance](screenshots/balance.png)
+![info](screenshots/easypass_info.png)
+![transactions](screenshots/transaction.png)
 ![range](screenshots/history_range.png)
 
 ---
@@ -105,11 +107,13 @@ Every card registered to your account becomes a separate HA device:
 | `Easy Pass – กข 1234 กรุงเทพมหานคร` | Created on first load |
 | `Easy Pass – กก 1234 เชียงใหม่` | Added automatically on next poll after registering a new card |
 
-### 1 select entity per account
+### 1 select entity per card
 
 | Entity | Description | Options |
 |--------|-------------|---------|
-| `select.easy_pass_[slug]_easy_pass_history_range` | Transaction history window | `7`, `30`, `90` (days) |
+| `select.easy_pass_[plate_slug]_history_range` | Transaction history window | `7`, `30`, `90` (days) |
+
+> Note: the entity ends in `_history_range` (not `_easy_pass_history_range`). It lives on the per-card device alongside the sensors.
 
 Changing the selection triggers an immediate coordinator reload and re-fetches data with the new window.
 
@@ -123,7 +127,7 @@ Changing the selection triggers an immediate coordinator reload and re-fetches d
 | `easy_pass_card_serial` | SmartCard serial (S/N) | — | get-all API |
 | `easy_pass_account_owner` | Account holder name | — | get-all API |
 | `easy_pass_m_flow_status` | M-Flow registration status | — | get-all API |
-| `easy_pass_monthly_spend` | Total toll charges this month | THB | Usage history API |
+| `easy_pass_monthly_spend` | Total toll charges over the selected history window | THB | Usage history API |
 | `easy_pass_last_toll_location` | Most recent tollgate name | — | Usage history API |
 | `easy_pass_last_transaction` | Date of most recent toll | — | Usage history API |
 | `easy_pass_last_top_up` | Most recent top-up amount | THB | Usage history API |
@@ -132,10 +136,10 @@ Changing the selection triggers an immediate coordinator reload and re-fetches d
 
 **`easy_pass_balance`** also carries:
 ```
-serial_number, license_plate, owner_name, recent_transactions (last 10)
+serial_number, license_plate, owner_name, transactions (full selected window)
 ```
 
-Each entry in `recent_transactions`:
+Each entry in `transactions`:
 ```yaml
 - date: "09/05/2026 22:37:28"
   location: "ประชาชื่น (ขาเข้า)"
@@ -178,13 +182,15 @@ sensor.easy_pass_กข_1234_กรุงเทพมหานคร_easy_pass_m
 
 ## Dashboard Examples
 
+> 📋 **Copy-paste ready dashboards live in [`dashboard_examples.yaml`](dashboard_examples.yaml)** — a full Sections view (balance, monthly spend, reward points, last toll, history selector, gauge, transaction table) plus standalone cards, chips, and automations.
+>
 > Replace the entity IDs below with your actual ones from Developer Tools → States.
 
 ### History range selector
 
 ```yaml
 type: custom:mushroom-select-card
-entity: select.easy_pass_SLUG_easy_pass_history_range
+entity: select.easy_pass_PLATE_history_range
 name: ช่วงเวลาประวัติ
 icon: mdi:history
 icon_color: blue
@@ -291,7 +297,7 @@ action:
 
 ### Transaction history table
 
-Renders the full month's transaction list as an HTML table inside a Markdown card.  
+Renders the selected window's transaction list as an HTML table inside a Markdown card.  
 No extra custom cards required — works with stock Home Assistant.
 
 > Replace `PLATE` with your entity slug from **Developer Tools → States** (filter by `easy_pass_balance` to find your exact entity ID).
@@ -349,7 +355,7 @@ Every 30 minutes the integration:
 
 1. **Login** — POSTs credentials to `/eservice/login` (Laravel AJAX), receives session cookies
 2. **Card list** — GETs `/eservice/easypasscardlist/get-all`; returns all cards with balance, reward points, license plate, owner, M-Flow status
-3. **Usage history** — POSTs to `/eservice/easypasscardlist/usage` per card for the current calendar month; returns all toll and top-up transactions
+3. **Usage history** — POSTs to `/eservice/easypasscardlist/usage` per card for the selected history window (7 / 30 / 90 days); returns all toll and top-up transactions
 4. **HA update** — Coordinator distributes the new data to all sensor entities; new cards discovered in step 2 get entities created automatically
 5. **Session renewal** — On session expiry the scraper re-logs in automatically (up to 3 retries)
 6. **Re-auth UI** — If credentials are rejected, HA shows a notification to re-enter your password
