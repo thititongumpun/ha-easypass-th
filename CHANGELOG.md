@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.0.5] - 2026-09-13
+
+### Added
+- **Integration icon and logo** — `custom_components/easypass_th/brand/`
+  ships `icon.png` / `logo.png` (plus `@2x`). Home Assistant 2026.3+ serves
+  these in preference to the brands CDN, so Easy Pass now shows a real icon
+  in Settings → Devices & Services. Older versions ignore the folder.
+- Dedicated error for Social/Google-only accounts, so the config flow says
+  the account has no website password instead of a generic auth failure.
+
+### Fixed
+- History range select is attached to the card device rather than the
+  account device.
+
+---
+
 ## [1.0.2] - 2026-05-20
 
 ### Added
