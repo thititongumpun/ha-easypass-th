@@ -374,6 +374,11 @@ class EasyPassScraper:
             return []
 
         tag_usage: list = (data.get("data") or {}).get("tag_usage") or []
+        if not tag_usage:
+            _LOGGER.debug(
+                "Usage API returned no transactions for %s (%s → %s). Response: %.500s",
+                cust_acct_id, start_date, end_date, data,
+            )
         transactions = []
         for item in tag_usage:
             try:
@@ -419,6 +424,20 @@ class EasyPassScraper:
             _LOGGER.warning("Card API returned no cards. Keys: %s", list(data.keys()))
             return []
 
+        # The usage API wants the card's account number (B…). On multi-card
+        # accounts CustomerID is the shared customer ID (A…) and returns no
+        # history, so prefer AccountNumber. The ID may be present in only one
+        # of the two lists; index it by SmartcardID from both.
+        def acct_id(c: dict) -> str:
+            payment = (c.get("easyPassPlusData") or {}).get("paymentMethod") or {}
+            return c.get("AccountNumber") or payment.get("accountId") or c.get("CustomerID") or ""
+
+        acct_ids = {
+            c.get("SmartcardID"): acct_id(c)
+            for c in paged_cards + dropdown
+            if c.get("SmartcardID") and acct_id(c)
+        }
+
         results: list[EasyPassCard] = []
         for d in raw_cards:
             card = EasyPassCard()
@@ -433,7 +452,14 @@ class EasyPassScraper:
             card.mflow_message = (
                 (d.get("easyPassPlusData") or {}).get("mflowRegisterMessage", "")
             )
-            card.cust_acct_id = d.get("CustomerID", "")
+            card.cust_acct_id = acct_id(d) or acct_ids.get(card.serial_number, "")
+            _LOGGER.debug("Card %s raw fields: %s", card.serial_number, sorted(d.keys()))
+            if not card.cust_acct_id:
+                _LOGGER.warning(
+                    "No account ID for card %s — transaction history sensors will be "
+                    "unknown. Available fields: %s",
+                    card.serial_number or card.license_plate, sorted(d.keys()),
+                )
 
             if not card.is_valid():
                 _LOGGER.warning("Parsed card has no serial or license plate. Entry: %s", d)

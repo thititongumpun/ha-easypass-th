@@ -7,6 +7,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.0.6] - 2026-09-24
+
+### Fixed
+- Last top-up, last toll location and monthly spend stayed unknown on multi-card accounts. The usage API was called with the shared customer ID (`CustomerID`, `A…`), which returns no history; it now uses each card's `AccountNumber` (falling back to `paymentMethod.accountId`, then `CustomerID`).
+- Account ID is now looked up across both card lists when one list lacks it.
+
+### Added
+- Debug logging of each card's raw field names and of the full usage API response when it returns no transactions.
+
 ## [1.0.5] - 2026-09-13
 
 ### Added
