@@ -7,12 +7,22 @@
 Monitor your **Thailand Easy Pass** (การทางพิเศษแห่งประเทศไทย) toll card balance, transaction history, and reward points directly in Home Assistant.  
 Supports **multiple cards** on a single account — each card appears as its own device.
 
+![dashboard](screenshots/dashboard_all_cards.png)
 ![balance](screenshots/balance.png)
 ![info](screenshots/easypass_info.png)
 ![transactions](screenshots/transaction.png)
 ![range](screenshots/history_range.png)
 
 ---
+
+## What's new in 1.0.7
+
+| # | Change | Details |
+|---|--------|---------|
+| 1 | **Monthly spend fixed** | Counts only the current calendar month (1st → today, Bangkok time), whatever history range is selected |
+| 2 | **Calendar history ranges** | 7 days / this month / this + previous 2 months (Thai labels: 7 วัน / เดือนนี้ / 3 เดือน) |
+| 3 | **Multi-card dashboard** | The full view in `dashboard_examples.yaml` shows every card automatically (Mushroom + auto-entities) |
+| 4 | **Marketplace** | Install instructions updated: HACS is the built-in Home Assistant Marketplace since HA 2026.11 |
 
 ## What's new in 1.0.4
 
@@ -188,6 +198,8 @@ sensor.easy_pass_กข_1234_กรุงเทพมหานคร_easy_pass_m
 > 📋 **Copy-paste ready dashboards live in [`dashboard_examples.yaml`](dashboard_examples.yaml)** — a full Sections view that shows **every card automatically** (balance, monthly spend, reward points, last toll, gauge, transaction table per card) plus standalone cards, chips, and automations. It needs two frontend cards from the Marketplace: [Mushroom](https://github.com/piitaya/lovelace-mushroom) and [auto-entities](https://github.com/thomasloven/lovelace-auto-entities). There is one history selector per account: changing it on any card changes it for all cards. Cards whose entity IDs were renamed won't be picked up by the suffix-based lookup.
 >
 > Replace the entity IDs below with your actual ones from Developer Tools → States.
+
+![All-cards dashboard](screenshots/dashboard_all_cards.png)
 
 ### History range selector
 

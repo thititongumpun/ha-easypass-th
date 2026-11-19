@@ -78,6 +78,8 @@ sections:
     column_span: 2
     cards:
       - type: custom:auto-entities
+        grid_options:
+          columns: full
         card:
           type: grid
           columns: 1
@@ -99,53 +101,58 @@ sections:
                     title: "🚗 {{ state_attr('this.entity_id', 'license_plate') }}"
                     subtitle: >-
                       {{ state_attr('this.entity_id' | replace('_easy_pass_balance', '_easy_pass_monthly_spend'), 'transaction_count') | int(0) }} ครั้งเดือนนี้
+                  # Tiles left, gauge right
                   - type: grid
                     columns: 2
                     square: false
                     cards:
-                      - type: custom:mushroom-template-card
+                      - type: grid
+                        columns: 2
+                        square: false
+                        cards:
+                          - type: custom:mushroom-template-card
+                            entity: this.entity_id
+                            primary: "{{ states(entity) | float(0) | round(2) }} ฿"
+                            secondary: "อัปเดต {{ relative_time(states[entity].last_updated) }} ที่แล้ว"
+                            icon: mdi:cash
+                            icon_color: >
+                              {% set bal = states(entity) | float(0) %}
+                              {% if bal < 100 %}red{% elif bal < 300 %}orange{% else %}green{% endif %}
+                            tap_action:
+                              action: more-info
+                          - type: custom:mushroom-template-card
+                            entity: this.entity_id
+                            primary: >
+                              {{ states(entity | replace('_easy_pass_balance', '_easy_pass_monthly_spend')) }} ฿
+                            secondary: ค่าทางด่วนเดือนนี้
+                            icon: mdi:cash-multiple
+                            icon_color: blue
+                          - type: custom:mushroom-template-card
+                            entity: this.entity_id
+                            primary: >
+                              {{ states(entity | replace('_easy_pass_balance', '_easy_pass_reward_points')) }} คะแนน
+                            secondary: คะแนนสะสม
+                            icon: mdi:star-circle
+                            icon_color: amber
+                          - type: custom:mushroom-template-card
+                            entity: this.entity_id
+                            primary: >
+                              {{ states(entity | replace('_easy_pass_balance', '_easy_pass_last_toll_location')) }}
+                            secondary: >
+                              {% set lt = entity | replace('_easy_pass_balance', '_easy_pass_last_toll_location') %}
+                              {{ state_attr(lt, 'txn_date') }} — {{ state_attr(lt, 'amount') }} ฿
+                            icon: mdi:map-marker
+                      - type: gauge
                         entity: this.entity_id
-                        primary: "{{ states(entity) | float(0) | round(2) }} ฿"
-                        secondary: "อัปเดต {{ relative_time(states[entity].last_updated) }} ที่แล้ว"
-                        icon: mdi:cash
-                        icon_color: >
-                          {% set bal = states(entity) | float(0) %}
-                          {% if bal < 100 %}red{% elif bal < 300 %}orange{% else %}green{% endif %}
-                        tap_action:
-                          action: more-info
-                      - type: custom:mushroom-template-card
-                        entity: this.entity_id
-                        primary: >
-                          {{ states(entity | replace('_easy_pass_balance', '_easy_pass_monthly_spend')) }} ฿
-                        secondary: ค่าทางด่วนเดือนนี้
-                        icon: mdi:cash-multiple
-                        icon_color: blue
-                      - type: custom:mushroom-template-card
-                        entity: this.entity_id
-                        primary: >
-                          {{ states(entity | replace('_easy_pass_balance', '_easy_pass_reward_points')) }} คะแนน
-                        secondary: คะแนนสะสม
-                        icon: mdi:star-circle
-                        icon_color: amber
-                      - type: custom:mushroom-template-card
-                        entity: this.entity_id
-                        primary: >
-                          {{ states(entity | replace('_easy_pass_balance', '_easy_pass_last_toll_location')) }}
-                        secondary: >
-                          {% set lt = entity | replace('_easy_pass_balance', '_easy_pass_last_toll_location') %}
-                          {{ state_attr(lt, 'txn_date') }} — {{ state_attr(lt, 'amount') }} ฿
-                        icon: mdi:map-marker
-                  - type: gauge
-                    entity: this.entity_id
-                    name: ยอดเงินคงเหลือ
-                    unit: ฿
-                    min: 0
-                    max: 1000
-                    needle: true
-                    severity:
-                      green: 300
-                      yellow: 100
-                      red: 0
+                        name: ยอดเงินคงเหลือ
+                        unit: ฿
+                        min: 0
+                        max: 1000
+                        needle: true
+                        severity:
+                          green: 300
+                          yellow: 100
+                          red: 0
                   - type: markdown
                     title: ประวัติการใช้งาน
                     content: >
