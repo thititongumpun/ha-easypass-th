@@ -9,6 +9,9 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.0.7] - 2026-11-19
 
+### Added
+- Multi-card dashboard example (auto-entities + Mushroom) that shows every card automatically.
+
 ### Fixed
 - Monthly spend now covers only the current calendar month (1st through today) instead of the whole fetched window, and no longer depends on the history range.
 

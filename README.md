@@ -183,7 +183,7 @@ sensor.easy_pass_กข_1234_กรุงเทพมหานคร_easy_pass_m
 
 ## Dashboard Examples
 
-> 📋 **Copy-paste ready dashboards live in [`dashboard_examples.yaml`](dashboard_examples.yaml)** — a full Sections view (balance, monthly spend, reward points, last toll, history selector, gauge, transaction table) plus standalone cards, chips, and automations.
+> 📋 **Copy-paste ready dashboards live in [`dashboard_examples.yaml`](dashboard_examples.yaml)** — a full Sections view that shows **every card automatically** (balance, monthly spend, reward points, last toll, gauge, transaction table per card) plus standalone cards, chips, and automations. It needs two HACS frontend cards: [Mushroom](https://github.com/piitaya/lovelace-mushroom) and [auto-entities](https://github.com/thomasloven/lovelace-auto-entities). There is one history selector per account: changing it on any card changes it for all cards. Cards whose entity IDs were renamed won't be picked up by the suffix-based lookup.
 >
 > Replace the entity IDs below with your actual ones from Developer Tools → States.
 
@@ -377,6 +377,7 @@ Login → get-all API ──► balance, reward points, license plate,
 
 - Home Assistant 2024.1+
 - [Mushroom Cards](https://github.com/piitaya/lovelace-mushroom) (optional, for dashboard examples)
+- [auto-entities](https://github.com/thomasloven/lovelace-auto-entities) (optional, for the multi-card dashboard)
 - Python packages (auto-installed by HA on first load): `requests`, `beautifulsoup4`, `lxml`
 
 ---
