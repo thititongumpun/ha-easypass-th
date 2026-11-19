@@ -12,6 +12,9 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - Multi-card dashboard example (auto-entities + Mushroom) that shows every card automatically.
 
+### Docs
+- Install instructions now use the Home Assistant Marketplace (formerly HACS, HA 2026.11+).
+
 ### Fixed
 - Monthly spend now covers only the current calendar month (1st through today) instead of the whole fetched window, and no longer depends on the history range.
 

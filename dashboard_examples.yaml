@@ -13,14 +13,14 @@
 # for the custom:mushroom-* cards. The gauge and markdown cards are stock HA.
 #
 # The FULL DASHBOARD VIEW auto-discovers all cards and also needs auto-entities
-# (https://github.com/thomasloven/lovelace-auto-entities, HACS).
+# (https://github.com/thomasloven/lovelace-auto-entities, Marketplace).
 # The remaining snippets (CARD DETAILS GRID, CHIPS BAR, HISTORY RANGE SELECTOR,
 # automation) are single-card examples; replace the slug per card.
 # =============================================================================
 
 
 # =============================================================================
-# FULL DASHBOARD VIEW — ALL CARDS (requires Mushroom + auto-entities from HACS)
+# FULL DASHBOARD VIEW — ALL CARDS (requires Mushroom + auto-entities from the Marketplace)
 # =============================================================================
 type: sections
 title: Easy Pass

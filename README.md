@@ -1,6 +1,6 @@
 # Thailand Easy Pass — Home Assistant Integration
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/thititongumpun/ha-easypass-th)
+[![Marketplace Custom](https://img.shields.io/badge/Marketplace-Custom-orange.svg)](https://github.com/thititongumpun/ha-easypass-th)
 [![HA Version](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -65,13 +65,15 @@ Supports **multiple cards** on a single account — each card appears as its own
 
 ## Installation
 
-### Via HACS (recommended)
+### Via the Home Assistant Marketplace (recommended)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=thititongumpun&repository=ha-easypass-th&category=integration)
+Since Home Assistant 2026.11, HACS is built in as the **Marketplace**. Existing HACS installs are migrated automatically.
 
-Or manually in HACS:
+[![Open your Home Assistant instance and open this repository in the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=thititongumpun&repository=ha-easypass-th&category=integration)
 
-1. Open HACS → **⋮** → **Custom repositories**
+Or add it by hand:
+
+1. **Settings → Marketplace → ⋮ → Custom repositories** (needs the GitHub connection set up in the Marketplace)
 2. Add URL: `https://github.com/thititongumpun/ha-easypass-th`
 3. Category: **Integration**
 4. Click **Add** → search **Thailand Easy Pass** → **Download**
@@ -183,7 +185,7 @@ sensor.easy_pass_กข_1234_กรุงเทพมหานคร_easy_pass_m
 
 ## Dashboard Examples
 
-> 📋 **Copy-paste ready dashboards live in [`dashboard_examples.yaml`](dashboard_examples.yaml)** — a full Sections view that shows **every card automatically** (balance, monthly spend, reward points, last toll, gauge, transaction table per card) plus standalone cards, chips, and automations. It needs two HACS frontend cards: [Mushroom](https://github.com/piitaya/lovelace-mushroom) and [auto-entities](https://github.com/thomasloven/lovelace-auto-entities). There is one history selector per account: changing it on any card changes it for all cards. Cards whose entity IDs were renamed won't be picked up by the suffix-based lookup.
+> 📋 **Copy-paste ready dashboards live in [`dashboard_examples.yaml`](dashboard_examples.yaml)** — a full Sections view that shows **every card automatically** (balance, monthly spend, reward points, last toll, gauge, transaction table per card) plus standalone cards, chips, and automations. It needs two frontend cards from the Marketplace: [Mushroom](https://github.com/piitaya/lovelace-mushroom) and [auto-entities](https://github.com/thomasloven/lovelace-auto-entities). There is one history selector per account: changing it on any card changes it for all cards. Cards whose entity IDs were renamed won't be picked up by the suffix-based lookup.
 >
 > Replace the entity IDs below with your actual ones from Developer Tools → States.
 
