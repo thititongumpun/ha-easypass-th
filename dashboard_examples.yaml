@@ -33,22 +33,16 @@ sections:
     cards:
       - type: custom:mushroom-template-card
         primary: >
-          {% set ns = namespace(t=0) %}
-          {% for e in integration_entities('easypass_th') | select('search', '_easy_pass_balance$') %}
-          {% set ns.t = ns.t + states(e) | float(0) %}
-          {% endfor %}
-          {{ ns.t | round(2) }} ฿
+          {# states.sensor (not integration_entities) so the card re-renders after an integration reload #}
+          {{ states.sensor | selectattr('entity_id', 'search', '_easy_pass_balance$') | map(attribute='state') | map('float', 0) | sum | round(2) }} ฿
         secondary: >
-          ยอดรวม {{ integration_entities('easypass_th') | select('search', '_easy_pass_balance$') | list | count }} บัตร
+          ยอดรวม {{ states.sensor | selectattr('entity_id', 'search', '_easy_pass_balance$') | list | count }} บัตร
         icon: mdi:wallet
         icon_color: green
       - type: custom:mushroom-template-card
         primary: >
-          {% set ns = namespace(t=0) %}
-          {% for e in integration_entities('easypass_th') | select('search', '_easy_pass_monthly_spend$') %}
-          {% set ns.t = ns.t + states(e) | float(0) %}
-          {% endfor %}
-          {{ ns.t | round(2) }} ฿
+          {# states.sensor (not integration_entities) so the card re-renders after an integration reload #}
+          {{ states.sensor | selectattr('entity_id', 'search', '_easy_pass_monthly_spend$') | map(attribute='state') | map('float', 0) | sum | round(2) }} ฿
         secondary: ค่าทางด่วนเดือนนี้ (ทุกบัตร)
         icon: mdi:cash-multiple
         icon_color: blue
