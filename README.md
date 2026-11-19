@@ -28,7 +28,7 @@ Supports **multiple cards** on a single account — each card appears as its own
 
 | # | Feature | Details |
 |---|---------|---------|
-| 1 | **History Range select entity** | Switch between 7 / 30 / 90-day transaction history directly from your dashboard — no need to go into Settings → Configure |
+| 1 | **History Range select entity** | Switch between 7 days / this month / this + previous 2 months transaction history directly from your dashboard — no need to go into Settings → Configure |
 
 > **Upgrading from 1.0.2?** Copy the updated integration folder and restart HA. A new **Easy Pass History Range** select entity will appear automatically on the Easy Pass Account device.
 
@@ -38,7 +38,7 @@ Supports **multiple cards** on a single account — each card appears as its own
 
 | # | Feature | Details |
 |---|---------|---------|
-| 1 | **Configurable transaction history range** | Choose 7 / 30 / 90 days instead of being locked to the current calendar month |
+| 1 | **Configurable transaction history range** | Choose 7 days / this month / this + previous 2 months |
 | 2 | **Manual refresh service** | Call `easypass_th.refresh` from an automation or Developer Tools to poll immediately |
 
 > **Upgrading from 1.0.x?** No migration needed — just copy and restart.
@@ -53,7 +53,7 @@ Supports **multiple cards** on a single account — each card appears as its own
 - 🪪 Card serial number (SmartCard S/N)
 - 👤 Account owner name
 - 🛣️ M-Flow registration status
-- 📊 Toll spend over configurable history window (default 30 days)
+- 📊 Toll spend over configurable history window (default: this month)
 - 📍 Last toll location (most recent tollgate passed)
 - 🕐 Last transaction date and last top-up amount (from real history)
 - **Multiple cards** — one HA device per card, all updated together
@@ -111,7 +111,7 @@ Every card registered to your account becomes a separate HA device:
 
 | Entity | Description | Options |
 |--------|-------------|---------|
-| `select.easy_pass_[plate_slug]_history_range` | Transaction history window | `7`, `30`, `90` (days) |
+| `select.easy_pass_[plate_slug]_history_range` | Transaction history window | `7` (7 days), `30` (this month), `90` (this + previous 2 months) |
 
 > Note: the entity ends in `_history_range` (not `_easy_pass_history_range`). It lives on the per-card device alongside the sensors.
 
@@ -127,7 +127,7 @@ Changing the selection triggers an immediate coordinator reload and re-fetches d
 | `easy_pass_card_serial` | SmartCard serial (S/N) | — | get-all API |
 | `easy_pass_account_owner` | Account holder name | — | get-all API |
 | `easy_pass_m_flow_status` | M-Flow registration status | — | get-all API |
-| `easy_pass_monthly_spend` | Total toll charges over the selected history window | THB | Usage history API |
+| `easy_pass_monthly_spend` | Toll charges from the 1st of the current month through today (independent of the history range) | THB | Usage history API |
 | `easy_pass_last_toll_location` | Most recent tollgate name | — | Usage history API |
 | `easy_pass_last_transaction` | Date of most recent toll | — | Usage history API |
 | `easy_pass_last_top_up` | Most recent top-up amount | THB | Usage history API |
@@ -156,6 +156,7 @@ txn_date, amount, balance_after
 **`easy_pass_monthly_spend`** also carries:
 ```
 transaction_count  (number of toll passages this month)
+period_start       (first day of the month counted, ISO date)
 ```
 
 ### Finding your entity IDs
@@ -355,7 +356,7 @@ Every 30 minutes the integration:
 
 1. **Login** — POSTs credentials to `/eservice/login` (Laravel AJAX), receives session cookies
 2. **Card list** — GETs `/eservice/easypasscardlist/get-all`; returns all cards with balance, reward points, license plate, owner, M-Flow status
-3. **Usage history** — POSTs to `/eservice/easypasscardlist/usage` per card for the selected history window (7 / 30 / 90 days); returns all toll and top-up transactions
+3. **Usage history** — POSTs to `/eservice/easypasscardlist/usage` per card for the selected history window (7 days / this month / this + previous 2 months); returns all toll and top-up transactions
 4. **HA update** — Coordinator distributes the new data to all sensor entities; new cards discovered in step 2 get entities created automatically
 5. **Session renewal** — On session expiry the scraper re-logs in automatically (up to 3 retries)
 6. **Re-auth UI** — If credentials are rejected, HA shows a notification to re-enter your password

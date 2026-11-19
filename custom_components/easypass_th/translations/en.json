@@ -40,7 +40,7 @@
           "history_days": "Transaction history range"
         },
         "data_description": {
-          "history_days": "How many days of transaction history to fetch on each poll (7, 30, or 90 days)"
+          "history_days": "7 days, this month (from the 1st), or this month plus the previous 2 months"
         }
       }
     }
@@ -70,6 +70,16 @@
       },
       "owner": {
         "name": "Account Owner"
+      }
+    },
+    "select": {
+      "history_range": {
+        "name": "History range",
+        "state": {
+          "7": "7 days",
+          "30": "This month",
+          "90": "3 months"
+        }
       }
     }
   }

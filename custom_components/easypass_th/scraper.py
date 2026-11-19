@@ -23,7 +23,9 @@ from __future__ import annotations
 import logging
 import re
 import time
+from datetime import date, datetime
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 import requests
 from bs4 import BeautifulSoup
@@ -40,13 +42,18 @@ from .const import (
     USAGE_API_URL,
 )
 
-from .models import EasyPassCard, EasyPassTransaction
+from .models import EasyPassCard, EasyPassTransaction, history_start
 
 _LOGGER = logging.getLogger(__name__)
 
 # Safety ceiling: stop paginating after this many pages to avoid infinite loops
 # on a buggy API response. A real account will never come close to this.
 _MAX_PAGES = 100
+
+
+def _bangkok_today() -> date:
+    """The site's dates are Thai local time; don't trust the host TZ."""
+    return datetime.now(ZoneInfo("Asia/Bangkok")).date()
 
 
 class EasyPassAuthError(Exception):
@@ -270,9 +277,16 @@ class EasyPassScraper:
         _LOGGER.debug("Total cards collected across pages: %d", len(cards))
 
         # Fetch usage history for each card that has a cust_acct_id
+        today = _bangkok_today()
+        month_start = today.replace(day=1)
+        range_start = history_start(history_days, today)
+        # Always reach back to the 1st so monthly spend is complete even on the 7-day option.
+        fetch_start = min(range_start, month_start)
         for card in cards:
+            card.history_start = range_start
+            card.month_start = month_start
             if card.cust_acct_id and csrf_token:
-                card.usage_history = self._fetch_usage(card.cust_acct_id, csrf_token, history_days)
+                card.usage_history = self._fetch_usage(card.cust_acct_id, csrf_token, fetch_start, today)
 
         return cards
 
@@ -334,17 +348,18 @@ class EasyPassScraper:
             or 'name="user_name" placeholder=' in html
         )
 
-    def _fetch_usage(self, cust_acct_id: str, csrf_token: str, history_days: int = 30) -> list:
+    def _fetch_usage(self, cust_acct_id: str, csrf_token: str,
+                     start: Optional[date] = None, end: Optional[date] = None) -> list:
         """
         POST to /eservice/easypasscardlist/usage to get transaction history.
 
-        Fetches from `history_days` ago through today.
+        Fetches from `start` (default: 1st of the month) through `end` (default: today, Bangkok time).
         Returns list[EasyPassTransaction] sorted oldest-first (as the API returns).
         """
-        from datetime import date, timedelta
-        today = date.today()
-        start_date = (today - timedelta(days=history_days)).strftime("%Y-%m-%d")
-        end_date = today.strftime("%Y-%m-%d")
+        end = end or _bangkok_today()
+        start = start or end.replace(day=1)
+        start_date = start.strftime("%Y-%m-%d")
+        end_date = end.strftime("%Y-%m-%d")
 
         payload = {
             "cust_acct_id": cust_acct_id,

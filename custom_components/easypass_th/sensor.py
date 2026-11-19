@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, time
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -167,7 +169,7 @@ class EasyPassBalanceSensor(EasyPassSensorBase):
             "license_plate": card.license_plate,
             "owner_name": card.owner_name,
         }
-        if card.usage_history:
+        if card.history:
             attrs["transactions"] = [
                 {
                     "no": t.row_id,
@@ -177,7 +179,7 @@ class EasyPassBalanceSensor(EasyPassSensorBase):
                     "balance_after": t.txn_balance,
                     "location": t.location,
                 }
-                for t in card.usage_history
+                for t in card.history
             ]
         return attrs
 
@@ -263,7 +265,7 @@ class EasyPassMflowSensor(EasyPassSensorBase):
 
 
 class EasyPassMonthlySpendSensor(EasyPassSensorBase):
-    """Total toll charges for the current month from usage history."""
+    """Toll charges from the 1st of the current month (Bangkok time) through today."""
 
     def __init__(self, coordinator: EasyPassCoordinator, entry: ConfigEntry, card_id: str) -> None:
         super().__init__(coordinator, entry, card_id, SENSOR_MONTHLY_SPEND)
@@ -284,7 +286,17 @@ class EasyPassMonthlySpendSensor(EasyPassSensorBase):
         card = self._card
         if not card:
             return {}
-        return {"transaction_count": sum(1 for t in card.usage_history if t.is_toll)}
+        return {
+            "transaction_count": len(card.month_tolls),
+            "period_start": card.month_start.isoformat() if card.month_start else None,
+        }
+
+    @property
+    def last_reset(self) -> Optional[datetime]:
+        card = self._card
+        if not card or not card.month_start:
+            return None
+        return datetime.combine(card.month_start, time.min, tzinfo=ZoneInfo("Asia/Bangkok"))
 
 
 class EasyPassLastTollLocationSensor(EasyPassSensorBase):

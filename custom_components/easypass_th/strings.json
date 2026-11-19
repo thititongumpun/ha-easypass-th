@@ -40,7 +40,7 @@
           "history_days": "Transaction history range"
         },
         "data_description": {
-          "history_days": "How many days of transaction history to fetch on each poll (7, 30, or 90 days)"
+          "history_days": "7 days, this month (from the 1st), or this month plus the previous 2 months"
         }
       }
     }
@@ -49,6 +49,18 @@
     "refresh": {
       "name": "Refresh",
       "description": "Force an immediate poll of all Easy Pass cards, instead of waiting for the next scheduled update."
+    }
+  },
+  "entity": {
+    "select": {
+      "history_range": {
+        "name": "History range",
+        "state": {
+          "7": "7 days",
+          "30": "This month",
+          "90": "3 months"
+        }
+      }
     }
   }
 }

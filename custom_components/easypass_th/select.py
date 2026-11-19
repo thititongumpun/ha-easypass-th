@@ -32,11 +32,12 @@ async def async_setup_entry(
 
 
 class EasyPassHistorySelect(SelectEntity):
-    """Select entity for the transaction history window (7 / 30 / 90 days)."""
+    """Select entity for the transaction history window (7 days / this month / this + previous 2 months)."""
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:history"
     _attr_name = "History Range"
+    _attr_translation_key = "history_range"
     _attr_options = [str(d) for d in HISTORY_DAYS_OPTIONS]
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, card_id: str) -> None:

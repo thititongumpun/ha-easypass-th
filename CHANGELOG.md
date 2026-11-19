@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.0.7] - 2026-11-19
+
+### Fixed
+- Monthly spend now covers only the current calendar month (1st through today) instead of the whole fetched window, and no longer depends on the history range.
+
+### Changed
+- History range `30` is now the current month and `90` is the current + previous 2 months (`7` is still a rolling 7 days).
+- History range selector shows Thai/English labels (7 วัน / เดือนนี้ / 3 เดือน); stored values are unchanged.
+- Monthly spend sensor exposes `last_reset` and a `period_start` attribute.
+
 ## [1.0.6] - 2026-09-24
 
 ### Fixed
